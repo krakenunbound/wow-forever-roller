@@ -73,6 +73,89 @@ RACE_FILE = {
     "Troll": "troll.jpg",
 }
 
+# Barber options — race-flavored, including Forever Skyborne notes.
+LOOKS = {
+    "Human": {
+        "hair": ["Squire Crop", "Long Waves", "Merchant Bob", "Battle Braid", "Widow's Peak"],
+        "color": [("Ash Blond", (210, 190, 140)), ("Chestnut", (92, 52, 28)), ("Raven", (24, 20, 22)), ("Auburn", (140, 52, 28)), ("Silver", (186, 190, 198))],
+        "eyes": [("Blue", (80, 140, 210)), ("Hazel", (140, 120, 60)), ("Green", (70, 140, 80)), ("Brown", (86, 52, 32))],
+        "mark": ["None", "Scarred brow", "Court stubble", "Lion paint"],
+    },
+    "Dwarf": {
+        "hair": ["Forge Braids", "Wild Mane", "Shaved Sides", "Crown Plait", "Anvil Knot"],
+        "color": [("Auburn", (150, 60, 28)), ("Coal", (28, 24, 22)), ("Copper", (176, 90, 36)), ("Snow", (210, 210, 214))],
+        "eyes": [("Amber", (200, 140, 50)), ("Slate", (90, 110, 130)), ("Green", (70, 130, 80))],
+        "mark": ["None", "Soot streaks", "Rune tattoos", "Battle nicks"],
+    },
+    "Night Elf": {
+        "hair": ["Moonfall", "Temple Veil", "Hunter Tail", "Leaf Crown", "Wildvine"],
+        "color": [("Teal", (40, 90, 90)), ("Violet", (70, 40, 110)), ("Silver", (190, 195, 210)), ("Night", (20, 24, 40))],
+        "eyes": [("Silver glow", (200, 220, 255)), ("Gold glow", (230, 200, 90)), ("Moonwhite", (230, 235, 255))],
+        "mark": ["None", "Facial tattoos", "Whisper marks", "Leaf paint"],
+    },
+    "Gnome": {
+        "hair": ["Spark Plug", "Tinker Tuft", "Goggle-crushed", "Lab Bob", "Static Shock"],
+        "color": [("Pink", (220, 120, 150)), ("Green", (80, 160, 90)), ("Blond", (220, 200, 110)), ("White", (230, 230, 235))],
+        "eyes": [("Green", (80, 170, 90)), ("Blue", (80, 140, 210)), ("Violet", (150, 90, 200))],
+        "mark": ["None", "Oil smudge", "Gear tattoo", "Burn specks"],
+    },
+    "Skyborne": {
+        "hair": ["Feather Crest", "Storm Sweep", "Cloud Veil", "Gale Braids", "Zephyr Fall"],
+        "color": [("Silver-white", (210, 220, 230)), ("Storm gray", (90, 105, 125)), ("Sky azure", (90, 160, 210))],
+        "eyes": [("Ice blue", (150, 210, 255)), ("Tempest gold", (240, 200, 70)), ("Void purple", (140, 90, 210))],
+        "mark": ["Wind runes", "Cloud markings", "Ley scars", "None"],
+    },
+    "Orc": {
+        "hair": ["Topknot", "War Braids", "Shaved Mohawk", "Wolf Mane", "Blackrock Crop"],
+        "color": [("Black", (18, 16, 16)), ("Brown", (70, 42, 28)), ("Gray", (110, 110, 115)), ("Red-tint", (120, 40, 30))],
+        "eyes": [("Amber", (210, 140, 40)), ("Red", (190, 40, 30)), ("Brown", (90, 50, 30))],
+        "mark": ["None", "Tusk rings", "Clan scars", "Blackrock paint"],
+    },
+    "Undead": {
+        "hair": ["Grave Locks", "Rot Bob", "Torn Banner", "Balding Crown", "Lordaeron Fall"],
+        "color": [("Bone", (200, 195, 175)), ("Slime", (90, 130, 70)), ("Raven", (30, 28, 32)), ("Putrid", (120, 140, 70))],
+        "eyes": [("Yellow glow", (230, 210, 70)), ("Soul blue", (80, 180, 220)), ("Dim orange", (210, 110, 40))],
+        "mark": ["None", "Jaw stitch", "Plague veins", "Lordaeron crest"],
+    },
+    "Tauren": {
+        "hair": ["Totem Braids", "Mesa Mane", "Feather Knot", "Thunder Crop", "Elder Fall"],
+        "color": [("Earth brown", (90, 55, 30)), ("Dun", (150, 110, 70)), ("Black", (28, 22, 18)), ("Painted white", (210, 205, 190))],
+        "eyes": [("Dark", (40, 30, 20)), ("Amber", (190, 130, 40)), ("Green", (70, 120, 60))],
+        "mark": ["None", "Spirit paint", "Horn wraps", "Sunwalk glyphs"],
+    },
+    "Troll": {
+        "hair": ["Red Mohawk", "Hex Braids", "Skull Knot", "Jungle Fall", "Darkspear Crest"],
+        "color": [("Crimson", (170, 30, 30)), ("Indigo", (50, 40, 90)), ("Bone-white", (220, 215, 200)), ("Jungle green", (40, 90, 50))],
+        "eyes": [("Gold", (230, 190, 50)), ("Red", (200, 40, 30)), ("Violet", (150, 70, 190))],
+        "mark": ["None", "Face paint", "Tusk notches", "Hex scars"],
+    },
+}
+
+
+def roll_look(race, avoid=None):
+    spec = LOOKS[race]
+    key = None
+    look = None
+    for _ in range(10):
+        look = {
+            "hair": random.choice(spec["hair"]),
+            "color": random.choice(spec["color"]),
+            "eyes": random.choice(spec["eyes"]),
+            "mark": random.choice(spec["mark"]),
+            "seed": random.randrange(1, 10**9),
+        }
+        key = (look["hair"], look["color"][0], look["eyes"][0], look["mark"])
+        if not avoid or key != (avoid["hair"], avoid["color"][0], avoid["eyes"][0], avoid["mark"]):
+            return look
+    return look
+
+
+def look_line(look) -> str:
+    if not look:
+        return "Empty"
+    extra = "" if look["mark"] == "None" else f"  ·  {look['mark']}"
+    return f"{look['hair']}  ·  {look['color'][0]}  ·  {look['eyes'][0]} eyes{extra}"
+
 LANDSCAPE = (1600, 900)
 PORTRAIT = (900, 1600)
 GOLD = (212, 175, 55)
@@ -360,6 +443,12 @@ class Forge:
         self.target_shift = 0.0
         self.shake = 0.0
         self.reveal_t = 0.0
+        self.looks = [None, None, None]
+        self.look_i = 0
+        self.look_spin = 0.0
+        self.look_preview = None
+        self.toast = ""
+        self.toast_t = 0.0
         for k, items in (
             ("faction", ["Alliance", "Horde"]),
             ("race", ["…"]),
@@ -379,13 +468,14 @@ class Forge:
         self.font_small = self._font(["Trebuchet MS", "Segoe UI"], 15 if p else 16, False)
         self.font_tag = self._font(["Trebuchet MS", "Segoe UI"], 16 if p else 18, True)
         if p:
-            self.portrait_rect = pygame.Rect(40, 128, 820, 620)
-            gap, sw, sh = 14, 402, 248
-            x0, y0 = 40, 764
+            self.portrait_rect = pygame.Rect(40, 118, 820, 560)
+            gap, sw, sh = 14, 402, 210
+            x0, y0 = 40, 694
             for i, k in enumerate(STAGES):
                 col, row = i % 2, i // 2
                 self.slots[k].rect = pygame.Rect(x0 + col * (sw + gap), y0 + row * (sh + gap), sw, sh)
-            self.banner_rect = pygame.Rect(40, 1288, 820, 210)
+            self.looks_rect = pygame.Rect(40, 1142, 820, 122)
+            self.banner_rect = pygame.Rect(40, 1280, 820, 220)
         else:
             self.portrait_rect = pygame.Rect(56, 148, 476, 560)
             gap, sw, sh = 18, 250, 268
@@ -394,6 +484,7 @@ class Forge:
             y0 = 168
             for i, k in enumerate(STAGES):
                 self.slots[k].rect = pygame.Rect(x0 + i * (sw + gap), y0, sw, sh)
+            self.looks_rect = pygame.Rect(x0, 456, total, 250)
             self.banner_rect = pygame.Rect(56, 728, self.w - 112, 86)
 
     def toggle_portrait(self):
@@ -427,6 +518,10 @@ class Forge:
         self.slots["gender"].idle(GENDERS)
         self.slots["class"].idle(["…"])
         self.target_shift = 0.0
+        self.looks = [None, None, None]
+        self.look_i = 0
+        self.look_spin = 0.0
+        self.look_preview = None
 
     def skip_reel(self):
         for k in STAGES:
@@ -457,6 +552,8 @@ class Forge:
             self.reveal_t = 0.0
             line = self.combo_line()
             self.history = [line] + self.history[:6]
+            self.looks = [roll_look(self.result["race"]), None, None]
+            self.look_i = 0
             self.sfx.play(self.sfx.fanfare, 0.8)
             if self.is_new():
                 self.sfx.play(self.sfx.sparkle, 0.9)
@@ -484,6 +581,52 @@ class Forge:
     def is_skyborne(self) -> bool:
         return self.result.get("race") == "Skyborne"
 
+    def say(self, msg):
+        self.toast = msg
+        self.toast_t = 2.0
+
+    def current_look(self):
+        if self.look_preview:
+            return self.look_preview
+        return self.looks[self.look_i]
+
+    def start_look_reroll(self):
+        if self.stage != "done" or self.look_spin > 0:
+            return
+        self.look_spin = 1.15
+        self.look_preview = roll_look(self.result["race"], self.looks[self.look_i])
+        self.sfx.play(self.sfx.tick, 0.4)
+
+    def select_look(self, i):
+        if self.stage != "done" or self.look_spin > 0:
+            return
+        i = int(i)
+        if i < 0 or i > 2:
+            return
+        if self.looks[i] is None:
+            if self.looks[self.look_i] is None:
+                return
+            self.looks[i] = dict(self.looks[self.look_i])
+            self.looks[i]["seed"] = random.randrange(1, 10**9)
+            self.look_i = i
+            self.sfx.play(self.sfx.lock, 0.55)
+            self.say(f"Look {i + 1} saved. Reroll it with A.")
+            return
+        if i == self.look_i:
+            return
+        self.look_i = i
+        self.sfx.play(self.sfx.sparkle, 0.55)
+        c = self.portrait_rect.center
+        for _ in range(24):
+            self.sparks.append(Spark(c[0], c[1], self.looks[i]["color"][1]))
+        self.say("Swapped instantly. No logout.")
+
+    def look_hit(self, pos):
+        if self.stage != "done" or not self.looks_rect.collidepoint(pos):
+            return None
+        w = self.looks_rect.w / 3
+        return clamp(int((pos[0] - self.looks_rect.x) / w), 0, 2)
+
     def icon_for(self, key, value) -> pygame.Surface | None:
         if value in (None, "—", "…"):
             return None
@@ -503,6 +646,23 @@ class Forge:
         self.shake = max(0.0, self.shake - dt)
         if self.stage == "done":
             self.reveal_t += dt
+        if self.toast_t > 0:
+            self.toast_t = max(0.0, self.toast_t - dt)
+        if self.look_spin > 0:
+            prev = int(self.look_spin * 10)
+            self.look_spin = max(0.0, self.look_spin - dt)
+            if int(self.look_spin * 10) != prev:
+                self.look_preview = roll_look(self.result["race"])
+                self.sfx.play(self.sfx.tick, 0.28)
+            if self.look_spin <= 0:
+                self.looks[self.look_i] = roll_look(self.result["race"], self.looks[self.look_i])
+                self.look_preview = None
+                self.sfx.play(self.sfx.lock, 0.8)
+                c = self.portrait_rect.center
+                col = self.looks[self.look_i]["color"][1]
+                for _ in range(36):
+                    self.sparks.append(Spark(c[0], c[1], col))
+                self.say("Appearance rerolled. No logout.")
         self.sparks = [p for p in self.sparks if p.update(dt)]
         for k, slot in self.slots.items():
             ev = slot.update(dt)
@@ -590,8 +750,11 @@ class Forge:
             if self.slots["class"].locked:
                 wash = pygame.Surface(inner.size)
                 wash.fill(CLASS_COLOR[self.result["class"]])
-                wash.set_alpha(28)
+                wash.set_alpha(18)
                 clip.blit(wash, (0, 0))
+            look = self.current_look() if self.stage == "done" else None
+            if look:
+                self._paint_look(clip, look)
             surf.blit(clip, inner.topleft)
         else:
             pygame.draw.rect(surf, (10, 8, 6), inner)
@@ -613,6 +776,80 @@ class Forge:
             pygame.draw.circle(surf, (12, 10, 8), (inner.left + 48, inner.top + 48), 42)
             pygame.draw.circle(surf, GOLD, (inner.left + 48, inner.top + 48), 42, 3)
             surf.blit(crest, (inner.left + 12, inner.top + 12))
+
+        if self.toast_t > 0 and self.toast:
+            a = clamp(self.toast_t / 0.4, 0, 1) if self.toast_t < 0.4 else 1
+            pill = self.font_tag.render(self.toast, True, INK)
+            pr = pill.get_rect(center=(frame.centerx, frame.bottom - 28))
+            box = pr.inflate(28, 14)
+            shade = pygame.Surface(box.size, pygame.SRCALPHA)
+            shade.fill((246, 221, 140, int(230 * a)))
+            surf.blit(shade, box.topleft)
+            pygame.draw.rect(surf, GOLD, box, 1, border_radius=8)
+            surf.blit(pill, pr)
+
+    def _paint_look(self, clip, look):
+        w, h = clip.get_size()
+        wash = pygame.Surface((w, h))
+        wash.fill(look["color"][1])
+        wash.set_alpha(42)
+        clip.blit(wash, (0, 0))
+        glow = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(glow, (*look["eyes"][1], 36), (int(w * 0.50), int(h * 0.34)), 70)
+        clip.blit(glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        if look["mark"] != "None":
+            rng = random.Random(look["seed"])
+            m = pygame.Surface((w, h), pygame.SRCALPHA)
+            col = (*look["color"][1], 110)
+            for _ in range(7):
+                x = rng.randint(int(w * 0.22), int(w * 0.78))
+                y = rng.randint(int(h * 0.22), int(h * 0.58))
+                pygame.draw.line(
+                    m,
+                    col,
+                    (x, y),
+                    (x + rng.randint(-24, 24), y + rng.randint(6, 30)),
+                    rng.choice((2, 2, 3)),
+                )
+            clip.blit(m, (0, 0))
+
+    def draw_wardrobe(self, surf):
+        r = self.looks_rect
+        self.panel(surf, r, (18, 14, 10), GOLD, 2)
+        title = "APPEARANCES  ·  REROLL ANYTIME  ·  SWAP INSTANTLY"
+        self.draw_text(surf, self.font_tag, title, (r.x + 16, r.y + 10), GOLD)
+        gap = 10
+        card_w = (r.w - 32 - 2 * gap) / 3
+        card_h = r.h - 52
+        for i in range(3):
+            cx = r.x + 16 + i * (card_w + gap)
+            cr = pygame.Rect(cx, r.y + 36, card_w, card_h)
+            look = self.looks[i]
+            active = i == self.look_i and self.stage == "done"
+            border = GOLD_LT if active else (GOLD if look else GOLD_DK)
+            fill = (40, 32, 18) if active else (22, 16, 12)
+            pygame.draw.rect(surf, fill, cr, border_radius=8)
+            pygame.draw.rect(surf, border, cr, 2 if active else 1, border_radius=8)
+            label = f"LOOK {i + 1}"
+            compact = cr.h < 100
+            if compact:
+                self.draw_text(surf, self.font_small, label, (cr.centerx, cr.centery - 14), GOLD_LT if active else MUTED, True)
+                if look:
+                    pygame.draw.circle(surf, look["color"][1], (cr.x + 18, cr.centery + 12), 7)
+                    pygame.draw.circle(surf, look["eyes"][1], (cr.x + 36, cr.centery + 12), 7)
+                    self.draw_text(surf, self.font_small, look["hair"], (cr.centerx + 16, cr.centery + 12), WHITE, True)
+                else:
+                    self.draw_text(surf, self.font_small, "empty", (cr.centerx, cr.centery + 12), MUTED, True)
+            else:
+                self.draw_text(surf, self.font_small, label, (cr.centerx, cr.y + 16), GOLD_LT if active else MUTED, True)
+                if look:
+                    pygame.draw.circle(surf, look["color"][1], (cr.centerx - 18, cr.y + 48), 10)
+                    pygame.draw.circle(surf, look["eyes"][1], (cr.centerx + 18, cr.y + 48), 10)
+                    pygame.draw.circle(surf, GOLD, (cr.centerx - 18, cr.y + 48), 10, 1)
+                    pygame.draw.circle(surf, GOLD, (cr.centerx + 18, cr.y + 48), 10, 1)
+                    self.draw_text(surf, self.font_small, look["hair"], (cr.centerx, cr.bottom - 22), WHITE, True)
+                else:
+                    self.draw_text(surf, self.font_small, "empty", (cr.centerx, cr.centery + 8), MUTED, True)
 
     def draw_slot(self, surf, slot: Slot):
         r = slot.rect
@@ -706,9 +943,9 @@ class Forge:
 
     def draw_help(self, surf):
         if self.portrait:
-            help_l = "SPACE roll   TAB snap   V landscape   F full   M mute   ESC quit"
+            help_l = "SPACE roll   A look   1-3 swap   TAB snap   V landscape   ESC quit"
         else:
-            help_l = "SPACE roll   TAB snap   V vertical   F fullscreen   M mute   S screenshot   ESC quit"
+            help_l = "SPACE roll   A reroll look   1 2 3 swap looks   TAB snap   V vertical   F full   M mute   S shot   ESC quit"
         mute = "   MUTED" if self.sfx.muted else ""
         self.draw_text(surf, self.font_small, help_l + mute, (self.w // 2, self.h - 36), MUTED, True)
 
@@ -726,6 +963,7 @@ class Forge:
         self.draw_portrait(surf)
         for slot in self.slots.values():
             self.draw_slot(surf, slot)
+        self.draw_wardrobe(surf)
         self.draw_result_banner(surf)
         self.draw_help(surf)
         for p in self.sparks:
@@ -753,6 +991,14 @@ class Forge:
                 return False
             if e.key in (pygame.K_SPACE, pygame.K_RETURN):
                 self.begin_roll()
+            elif e.key in (pygame.K_a, pygame.K_r):
+                self.start_look_reroll()
+            elif e.key in (pygame.K_1, pygame.K_KP1):
+                self.select_look(0)
+            elif e.key in (pygame.K_2, pygame.K_KP2):
+                self.select_look(1)
+            elif e.key in (pygame.K_3, pygame.K_KP3):
+                self.select_look(2)
             elif e.key == pygame.K_TAB:
                 self.skip_reel()
             elif e.key == pygame.K_m:
@@ -764,7 +1010,11 @@ class Forge:
             elif e.key == pygame.K_v:
                 self.toggle_portrait()
         if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
-            self.begin_roll()
+            hit = self.look_hit(e.pos)
+            if hit is not None:
+                self.select_look(hit)
+            else:
+                self.begin_roll()
         return True
 
     def run(self, auto=False, frames=0, save=None):
