@@ -61,6 +61,45 @@ CLASS_COLOR = {
     "Warlock": (148, 130, 201),
     "Druid": (255, 125, 10),
 }
+RACE_SLUG = {
+    "Human": "human",
+    "Dwarf": "dwarf",
+    "Night Elf": "nightelf",
+    "Gnome": "gnome",
+    "Skyborne": "skyborne",
+    "Orc": "orc",
+    "Undead": "undead",
+    "Tauren": "tauren",
+    "Troll": "troll",
+}
+CLASS_GEAR = {
+    "Warrior": "heavy plate armor, sword and shield, battlefield grit",
+    "Paladin": "holy plate armor, gold sunburst, warhammer or libram",
+    "Hunter": "mail and leather, hooded cloak, longbow, beast-lore",
+    "Rogue": "dark leather, hood or mask, twin daggers, shadows",
+    "Priest": "cloth priest robes, cloth not plate, holy or shadow staff",
+    "Shaman": "mail and furs, totems, lightning and earth glow",
+    "Mage": "cloth mage robes, arcane runes, spell-book or staff, no plate",
+    "Warlock": "dark cloth warlock robes, fel-green fire, skulls, no plate",
+    "Druid": "druid leather and leaves, antlers or claws, nature magic",
+}
+
+def portrait_file(race, gender, cls) -> str:
+    return f"{RACE_SLUG[race]}_{gender.lower()}_{cls.lower()}.jpg"
+
+
+def unique_race_classes():
+    seen = []
+    got = set()
+    for (_fac, race), classes in CLASSES.items():
+        for cls in classes:
+            key = (race, cls)
+            if key not in got:
+                got.add(key)
+                seen.append(key)
+    return seen
+
+
 RACE_FILE = {
     "Human": {"Male": "human_male.jpg", "Female": "human_female.jpg"},
     "Dwarf": {"Male": "dwarf_male.jpg", "Female": "dwarf_female.jpg"},
@@ -293,6 +332,7 @@ class Assets:
     def __init__(self):
         self.races = {}
         self.races_sm = {}
+        self.portraits = {}
         self.classes = {}
         self.factions = {}
         for name, genders in RACE_FILE.items():
@@ -300,6 +340,14 @@ class Assets:
                 img = load_jpg(ASSET / "races" / fn)
                 self.races[(name, gender)] = pygame.transform.smoothscale(img, (460, 460))
                 self.races_sm[(name, gender)] = circle_crop(img, 168)
+        portrait_dir = ASSET / "portraits"
+        if portrait_dir.exists():
+            for race, cls in unique_race_classes():
+                for gender in GENDERS:
+                    path = portrait_dir / portrait_file(race, gender, cls)
+                    if path.exists():
+                        img = load_jpg(path)
+                        self.portraits[(race, gender, cls)] = pygame.transform.smoothscale(img, (520, 520))
         for cls in CLASS_COLOR:
             img = load_jpg(ASSET / "classes" / f"{cls.lower()}.jpg")
             self.classes[cls] = circle_crop(img, 168)
@@ -582,6 +630,19 @@ class Forge:
     def is_skyborne(self) -> bool:
         return self.result.get("race") == "Skyborne"
 
+    def get_portrait(self, race, gender, cls):
+        key = (race, gender, cls)
+        cached = self.assets.portraits.get(key)
+        if cached is not None:
+            return cached
+        path = ASSET / "portraits" / portrait_file(race, gender, cls)
+        if path.exists():
+            img = load_jpg(path)
+            img = pygame.transform.smoothscale(img, (520, 520))
+            self.assets.portraits[key] = img
+            return img
+        return None
+
     def say(self, msg):
         self.toast = msg
         self.toast_t = 2.0
@@ -731,11 +792,12 @@ class Forge:
         frame = self.portrait_rect
         self.panel(surf, frame, (16, 12, 10), GOLD, 3)
         inner = frame.inflate(-24, -24)
-        race = self.result.get("race") if self.slots["race"].locked else None
-        gender = self.result.get("gender") if self.slots["gender"].locked else None
-        key = (race, gender) if race and gender else None
-        if key and key in self.assets.races:
-            img = self.assets.races[key]
+        ready = self.stage == "done"
+        key = None
+        if ready:
+            key = (self.result["race"], self.result["gender"], self.result["class"])
+        img = self.get_portrait(*key) if key else None
+        if img is not None:
             clip = pygame.Surface(inner.size)
             scale = max(inner.w / img.get_width(), inner.h / img.get_height())
             nw, nh = int(img.get_width() * scale), int(img.get_height() * scale)
@@ -743,35 +805,29 @@ class Forge:
             sx = (nw - inner.w) // 2
             sy = (nh - inner.h) // 2
             clip.blit(fitted, (0, 0), pygame.Rect(sx, sy, inner.w, inner.h))
-            if self.slots["class"].locked:
-                wash = pygame.Surface(inner.size)
-                wash.fill(CLASS_COLOR[self.result["class"]])
-                wash.set_alpha(18)
-                clip.blit(wash, (0, 0))
-            look = self.current_look() if self.stage == "done" else None
+            look = self.current_look()
             if look:
                 self._paint_look(clip, look)
             surf.blit(clip, inner.topleft)
-        else:
-            pygame.draw.rect(surf, (10, 8, 6), inner)
-            msg = "PRESS  SPACE  TO  ROLL"
-            if self.stage not in ("idle", "done"):
-                msg = "THE DICE ARE FALLING…"
-            self.draw_text(surf, self.font_slot, msg, inner.center, MUTED, True)
-
-        if self.slots["class"].locked:
             badge = pygame.transform.smoothscale(self.assets.classes[self.result["class"]], (88, 88))
             bx, by = inner.right - 108, inner.bottom - 108
             pygame.draw.circle(surf, (12, 10, 8), (bx + 44, by + 44), 50)
             pygame.draw.circle(surf, GOLD, (bx + 44, by + 44), 50, 3)
             surf.blit(badge, (bx, by))
-
-        if self.slots["faction"].locked:
             fac = self.result["faction"]
             crest = pygame.transform.smoothscale(self.assets.factions[fac], (72, 72))
             pygame.draw.circle(surf, (12, 10, 8), (inner.left + 48, inner.top + 48), 42)
             pygame.draw.circle(surf, GOLD, (inner.left + 48, inner.top + 48), 42, 3)
             surf.blit(crest, (inner.left + 12, inner.top + 12))
+        else:
+            pygame.draw.rect(surf, (10, 8, 6), inner)
+            if ready:
+                msg = f"{self.result['gender']} {self.result['race']} {self.result['class']}"
+                self.draw_text(surf, self.font_slot, msg.upper(), inner.center, GOLD_LT, True)
+            elif self.stage == "idle":
+                self.draw_text(surf, self.font_slot, "PRESS  SPACE  TO  ROLL", inner.center, MUTED, True)
+            else:
+                self.draw_text(surf, self.font_slot, "THE DICE ARE FALLING…", inner.center, MUTED, True)
 
         if self.toast_t > 0 and self.toast:
             a = clamp(self.toast_t / 0.4, 0, 1) if self.toast_t < 0.4 else 1
@@ -1043,6 +1099,19 @@ def check_matrix():
     for c in sorted(NEW_COMBOS):
         print("  ", " / ".join(c))
     assert n == 56, n
+    pairs = unique_race_classes()
+    missing = []
+    for race, cls in pairs:
+        for gender in GENDERS:
+            fn = portrait_file(race, gender, cls)
+            if not (ASSET / "portraits" / fn).exists():
+                missing.append(fn)
+    print(f"Unique race/class pairs: {len(pairs)}  portraits needed: {len(pairs)*2}")
+    print(f"Missing portraits: {len(missing)}")
+    for fn in missing[:20]:
+        print("  ", fn)
+    if len(missing) > 20:
+        print(f"  ... +{len(missing)-20} more")
     print("OK")
 
 
