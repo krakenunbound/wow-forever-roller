@@ -2,7 +2,9 @@
 
 Stream overlay that rolls a legal **World of Warcraft: Forever** character.
 
-Order: **Faction → Race → Gender → Class** (class is filtered by faction + race).
+Order: **Faction → Gender → Race → Class** (class is filtered by faction + race).
+
+Race portraits stay hidden until gender is locked, and every race has a male and female painting.
 
 Includes Skyborne and the six launch combos (Human Hunter, Gnome Priest, Dwarf Shaman, Orc Mage, Troll Warlock, Undead Paladin).
 

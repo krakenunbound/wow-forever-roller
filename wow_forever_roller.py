@@ -62,15 +62,15 @@ CLASS_COLOR = {
     "Druid": (255, 125, 10),
 }
 RACE_FILE = {
-    "Human": "human.jpg",
-    "Dwarf": "dwarf.jpg",
-    "Night Elf": "nightelf.jpg",
-    "Gnome": "gnome.jpg",
-    "Skyborne": "skyborne.jpg",
-    "Orc": "orc.jpg",
-    "Undead": "undead.jpg",
-    "Tauren": "tauren.jpg",
-    "Troll": "troll.jpg",
+    "Human": {"Male": "human_male.jpg", "Female": "human_female.jpg"},
+    "Dwarf": {"Male": "dwarf_male.jpg", "Female": "dwarf_female.jpg"},
+    "Night Elf": {"Male": "nightelf_male.jpg", "Female": "nightelf_female.jpg"},
+    "Gnome": {"Male": "gnome_male.jpg", "Female": "gnome_female.jpg"},
+    "Skyborne": {"Male": "skyborne_male.jpg", "Female": "skyborne_female.jpg"},
+    "Orc": {"Male": "orc_male.jpg", "Female": "orc_female.jpg"},
+    "Undead": {"Male": "undead_male.jpg", "Female": "undead_female.jpg"},
+    "Tauren": {"Male": "tauren_male.jpg", "Female": "tauren_female.jpg"},
+    "Troll": {"Male": "troll_male.jpg", "Female": "troll_female.jpg"},
 }
 
 # Barber options — race-flavored, including Forever Skyborne notes.
@@ -168,8 +168,8 @@ HORDE_C = (196, 42, 42)
 WHITE = (236, 228, 210)
 MUTED = (160, 148, 122)
 
-STAGES = ("faction", "race", "gender", "class")
-SPIN_MS = {"faction": 1700, "race": 2300, "gender": 1400, "class": 2600}
+STAGES = ("faction", "gender", "race", "class")
+SPIN_MS = {"faction": 1700, "gender": 1400, "race": 2300, "class": 2600}
 
 
 def clamp(v, lo, hi):
@@ -295,10 +295,11 @@ class Assets:
         self.races_sm = {}
         self.classes = {}
         self.factions = {}
-        for name, fn in RACE_FILE.items():
-            img = load_jpg(ASSET / "races" / fn)
-            self.races[name] = pygame.transform.smoothscale(img, (460, 460))
-            self.races_sm[name] = circle_crop(img, 168)
+        for name, genders in RACE_FILE.items():
+            for gender, fn in genders.items():
+                img = load_jpg(ASSET / "races" / fn)
+                self.races[(name, gender)] = pygame.transform.smoothscale(img, (460, 460))
+                self.races_sm[(name, gender)] = circle_crop(img, 168)
         for cls in CLASS_COLOR:
             img = load_jpg(ASSET / "classes" / f"{cls.lower()}.jpg")
             self.classes[cls] = circle_crop(img, 168)
@@ -431,7 +432,7 @@ class Forge:
         self.screen = pygame.display.set_mode((self.w, self.h))
         self.assets = Assets()
         self.sfx = SFX()
-        titles = ["FACTION", "RACE", "GENDER", "CLASS"]
+        titles = ["FACTION", "GENDER", "RACE", "CLASS"]
         self.slots = {k: Slot(k, titles[i], (0, 0, 100, 100)) for i, k in enumerate(STAGES)}
         self.apply_layout()
         self.stage = "idle"
@@ -451,8 +452,8 @@ class Forge:
         self.toast_t = 0.0
         for k, items in (
             ("faction", ["Alliance", "Horde"]),
-            ("race", ["…"]),
             ("gender", GENDERS),
+            ("race", ["…"]),
             ("class", ["…"]),
         ):
             self.slots[k].idle(items)
@@ -514,8 +515,8 @@ class Forge:
         self.stage = "faction"
         self.reveal_t = 0.0
         self.slots["faction"].start(["Alliance", "Horde"], self.result["faction"], SPIN_MS["faction"])
-        self.slots["race"].idle(["…"])
         self.slots["gender"].idle(GENDERS)
+        self.slots["race"].idle(["…"])
         self.slots["class"].idle(["…"])
         self.target_shift = 0.0
         self.looks = [None, None, None]
@@ -546,7 +547,7 @@ class Forge:
         for _ in range(28):
             self.sparks.append(Spark(r.centerx, r.centery, color))
         self.shake = 0.18
-        nxt = {"faction": "race", "race": "gender", "gender": "class", "class": "done"}[key]
+        nxt = {"faction": "gender", "gender": "race", "race": "class", "class": "done"}[key]
         if nxt == "done":
             self.stage = "done"
             self.reveal_t = 0.0
@@ -562,10 +563,10 @@ class Forge:
                     self.sparks.append(Spark(c[0], c[1], GOLD_LT))
             return
         self.stage = nxt
-        if nxt == "race":
-            self.slots["race"].start(RACES[self.result["faction"]], self.result["race"], SPIN_MS["race"])
-        elif nxt == "gender":
+        if nxt == "gender":
             self.slots["gender"].start(GENDERS, self.result["gender"], SPIN_MS["gender"])
+        elif nxt == "race":
+            self.slots["race"].start(RACES[self.result["faction"]], self.result["race"], SPIN_MS["race"])
         elif nxt == "class":
             pool = CLASSES[(self.result["faction"], self.result["race"])]
             self.slots["class"].start(pool, self.result["class"], SPIN_MS["class"])
@@ -633,7 +634,10 @@ class Forge:
         if key == "faction":
             return self.assets.factions.get(value)
         if key == "race":
-            return self.assets.races_sm.get(value)
+            gender = self.result.get("gender") if self.slots["gender"].locked else None
+            if gender:
+                return self.assets.races_sm.get((value, gender))
+            return None
         if key == "gender":
             return self.assets.genders.get(value)
         if key == "class":
@@ -728,8 +732,10 @@ class Forge:
         self.panel(surf, frame, (16, 12, 10), GOLD, 3)
         inner = frame.inflate(-24, -24)
         race = self.result.get("race") if self.slots["race"].locked else None
-        if race and race in self.assets.races:
-            img = self.assets.races[race]
+        gender = self.result.get("gender") if self.slots["gender"].locked else None
+        key = (race, gender) if race and gender else None
+        if key and key in self.assets.races:
+            img = self.assets.races[key]
             clip = pygame.Surface(inner.size)
             scale = max(inner.w / img.get_width(), inner.h / img.get_height())
             nw, nh = int(img.get_width() * scale), int(img.get_height() * scale)
@@ -737,16 +743,6 @@ class Forge:
             sx = (nw - inner.w) // 2
             sy = (nh - inner.h) // 2
             clip.blit(fitted, (0, 0), pygame.Rect(sx, sy, inner.w, inner.h))
-            if self.result.get("gender") == "Female" and self.slots["gender"].locked:
-                tint = pygame.Surface(inner.size)
-                tint.fill((40, 8, 28))
-                tint.set_alpha(36)
-                clip.blit(tint, (0, 0))
-            elif self.result.get("gender") == "Male" and self.slots["gender"].locked:
-                tint = pygame.Surface(inner.size)
-                tint.fill((8, 18, 40))
-                tint.set_alpha(28)
-                clip.blit(tint, (0, 0))
             if self.slots["class"].locked:
                 wash = pygame.Surface(inner.size)
                 wash.fill(CLASS_COLOR[self.result["class"]])
@@ -792,11 +788,8 @@ class Forge:
         w, h = clip.get_size()
         wash = pygame.Surface((w, h))
         wash.fill(look["color"][1])
-        wash.set_alpha(42)
+        wash.set_alpha(26)
         clip.blit(wash, (0, 0))
-        glow = pygame.Surface((w, h), pygame.SRCALPHA)
-        pygame.draw.circle(glow, (*look["eyes"][1], 36), (int(w * 0.50), int(h * 0.34)), 70)
-        clip.blit(glow, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
         if look["mark"] != "None":
             rng = random.Random(look["seed"])
             m = pygame.Surface((w, h), pygame.SRCALPHA)
