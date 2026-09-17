@@ -641,7 +641,7 @@ class Forge:
             img = pygame.transform.smoothscale(img, (520, 520))
             self.assets.portraits[key] = img
             return img
-        return None
+        return self.assets.races.get((race, gender))
 
     def say(self, msg):
         self.toast = msg
